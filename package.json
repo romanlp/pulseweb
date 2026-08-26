@@ -10,7 +10,11 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "bun run build && wrangler deploy"
+    "deploy": "bun run build && wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply prod-pulseweb-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply prod-pulseweb-db --remote"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -22,6 +26,7 @@
     "@tanstack/react-start": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "drizzle-orm": "~0.45.2",
     "lucide-react": "^1.34.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -38,6 +43,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "drizzle-kit": "~0.31.10",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "wrangler": "^4.70.0"
