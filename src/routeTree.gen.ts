@@ -15,11 +15,10 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppHealthRouteImport } from './routes/_app/health'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as ApiAuthGoogleRouteImport } from './routes/api/auth/google'
 import { Route as ApiDbHealthRouteImport } from './routes/api/db/health'
+import { Route as ApiHealthConnectionRouteImport } from './routes/api/health/connection'
 import { Route as ApiHealthStepsRouteImport } from './routes/api/health/steps'
 import { Route as ApiHealthSummaryRouteImport } from './routes/api/health/summary'
-import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -50,14 +49,14 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAuthGoogleRoute = ApiAuthGoogleRouteImport.update({
-  id: '/api/auth/google',
-  path: '/api/auth/google',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiDbHealthRoute = ApiDbHealthRouteImport.update({
   id: '/api/db/health',
   path: '/api/db/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthConnectionRoute = ApiHealthConnectionRouteImport.update({
+  id: '/api/health/connection',
+  path: '/api/health/connection',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthStepsRoute = ApiHealthStepsRouteImport.update({
@@ -70,11 +69,6 @@ const ApiHealthSummaryRoute = ApiHealthSummaryRouteImport.update({
   path: '/api/health/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAuthGoogleCallbackRoute = ApiAuthGoogleCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => ApiAuthGoogleRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -82,11 +76,10 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/health': typeof AppHealthRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/auth/google': typeof ApiAuthGoogleRouteWithChildren
   '/api/db/health': typeof ApiDbHealthRoute
+  '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
-  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -94,11 +87,10 @@ export interface FileRoutesByTo {
   '/health': typeof AppHealthRoute
   '/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/auth/google': typeof ApiAuthGoogleRouteWithChildren
   '/api/db/health': typeof ApiDbHealthRoute
+  '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
-  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -108,11 +100,10 @@ export interface FileRoutesById {
   '/_app/health': typeof AppHealthRoute
   '/_app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/auth/google': typeof ApiAuthGoogleRouteWithChildren
   '/api/db/health': typeof ApiDbHealthRoute
+  '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
-  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -122,11 +113,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/health'
     | '/api/auth/$'
-    | '/api/auth/google'
     | '/api/db/health'
+    | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
-    | '/api/auth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -134,11 +124,10 @@ export interface FileRouteTypes {
     | '/health'
     | '/'
     | '/api/auth/$'
-    | '/api/auth/google'
     | '/api/db/health'
+    | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
-    | '/api/auth/google/callback'
   id:
     | '__root__'
     | '/_app'
@@ -147,11 +136,10 @@ export interface FileRouteTypes {
     | '/_app/health'
     | '/_app/'
     | '/api/auth/$'
-    | '/api/auth/google'
     | '/api/db/health'
+    | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
-    | '/api/auth/google/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -159,8 +147,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiAuthGoogleRoute: typeof ApiAuthGoogleRouteWithChildren
   ApiDbHealthRoute: typeof ApiDbHealthRoute
+  ApiHealthConnectionRoute: typeof ApiHealthConnectionRoute
   ApiHealthStepsRoute: typeof ApiHealthStepsRoute
   ApiHealthSummaryRoute: typeof ApiHealthSummaryRoute
 }
@@ -209,18 +197,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/google': {
-      id: '/api/auth/google'
-      path: '/api/auth/google'
-      fullPath: '/api/auth/google'
-      preLoaderRoute: typeof ApiAuthGoogleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/db/health': {
       id: '/api/db/health'
       path: '/api/db/health'
       fullPath: '/api/db/health'
       preLoaderRoute: typeof ApiDbHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/connection': {
+      id: '/api/health/connection'
+      path: '/api/health/connection'
+      fullPath: '/api/health/connection'
+      preLoaderRoute: typeof ApiHealthConnectionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health/steps': {
@@ -237,13 +225,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/google/callback': {
-      id: '/api/auth/google/callback'
-      path: '/callback'
-      fullPath: '/api/auth/google/callback'
-      preLoaderRoute: typeof ApiAuthGoogleCallbackRouteImport
-      parentRoute: typeof ApiAuthGoogleRoute
-    }
   }
 }
 
@@ -259,25 +240,13 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
-interface ApiAuthGoogleRouteChildren {
-  ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
-}
-
-const ApiAuthGoogleRouteChildren: ApiAuthGoogleRouteChildren = {
-  ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
-}
-
-const ApiAuthGoogleRouteWithChildren = ApiAuthGoogleRoute._addFileChildren(
-  ApiAuthGoogleRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiAuthGoogleRoute: ApiAuthGoogleRouteWithChildren,
   ApiDbHealthRoute: ApiDbHealthRoute,
+  ApiHealthConnectionRoute: ApiHealthConnectionRoute,
   ApiHealthStepsRoute: ApiHealthStepsRoute,
   ApiHealthSummaryRoute: ApiHealthSummaryRoute,
 }

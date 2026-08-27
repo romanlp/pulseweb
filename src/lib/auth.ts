@@ -7,13 +7,21 @@ export const auth = betterAuth({
     database: drizzleAdapter(getDb(), {
         provider: "sqlite",
     }),
+    account: {
+        accountLinking: {
+            enabled: true,
+            disableImplicitLinking: true,
+            trustedProviders: ["google"],
+            allowDifferentEmails: true,
+        },
+    },
     emailAndPassword: {
         enabled: true,
     },
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         }
     },
     plugins: [tanstackStartCookies()]

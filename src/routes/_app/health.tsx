@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Activity,
   Flame,
@@ -9,9 +9,10 @@ import {
   RefreshCw,
   Timer,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
-import { Button, buttonVariants } from "#/components/ui/button";
+import { authClient } from "@/lib/auth-client";
+import { Button } from "#/components/ui/button";
 import {
   Card,
   CardContent,
@@ -54,6 +55,13 @@ type HealthSummaryResponse = {
   }>;
 };
 
+type ConnectionState =
+  | { status: "loading" }
+  | { status: "connected" }
+  | { status: "not_connected" }
+  | { status: "reconnect_required" }
+  | { status: "unavailable" };
+
 export const Route = createFileRoute("/_app/health")({
   validateSearch: (search: Record<string, unknown>) => ({
     connected: search.connected === "1" ? true : undefined,
@@ -63,32 +71,116 @@ export const Route = createFileRoute("/_app/health")({
 });
 
 function Health() {
-  const { connected, error: oauthError } = Route.useSearch();
+  const { connected } = Route.useSearch();
+  const navigate = useNavigate();
+  const [connection, setConnection] = useState<ConnectionState>({
+    status: "loading",
+  });
+  const [reconnectDismissed, setReconnectDismissed] = useState(false);
+  const [linking, setLinking] = useState(false);
   const [summary, setSummary] = useState<HealthSummaryResponse>();
-  const [error, setError] = useState(oauthError);
-  const [loading, setLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string>();
+
+  async function loadConnection() {
+    try {
+      const response = await fetch("/api/health/connection", {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        setConnection({ status: "unavailable" });
+        return;
+      }
+
+      const body = (await response.json()) as {
+        status: "connected" | "not_connected" | "reconnect_required";
+      };
+
+      setConnection(
+        body.status === "connected" || body.status === "not_connected"
+          ? { status: body.status }
+          : { status: "reconnect_required" },
+      );
+    } catch {
+      setConnection({ status: "unavailable" });
+    }
+  }
+
+  useEffect(() => {
+    void loadConnection();
+  }, []);
+
+  useEffect(() => {
+    if (connected) {
+      setReconnectDismissed(false);
+      void navigate({
+        to: "/health",
+        search: { connected: undefined, error: undefined },
+        replace: true,
+      });
+    }
+  }, [connected, navigate]);
+
+  async function linkGoogle() {
+    setLinking(true);
+    setSummaryError(undefined);
+
+    try {
+      const result = await authClient.linkSocial({
+        provider: "google",
+        callbackURL: "/health?connected=1",
+        scopes: [
+          "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly",
+        ],
+        additionalParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      });
+
+      if (result.error || !result.data?.redirect) {
+        throw new Error(
+          result.error?.message ?? "Unable to start Google Health linking.",
+        );
+      }
+
+      window.location.href = result.data.url;
+    } catch (caught) {
+      setLinking(false);
+      setSummaryError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to start Google Health linking.",
+      );
+    }
+  }
 
   async function loadSummary() {
-    setLoading(true);
-    setError(undefined);
+    setSummaryLoading(true);
+    setSummaryError(undefined);
 
     try {
       const response = await fetch("/api/health/summary");
       const body = (await response.json()) as HealthSummaryResponse & {
-        error?: string;
+        message?: string;
       };
 
       if (!response.ok) {
-        throw new Error(body.error ?? "Unable to fetch your health summary.");
+        throw new Error(body.message ?? "Unable to fetch your health summary.");
       }
 
       setSummary(body);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong.");
+      setSummaryError(
+        caught instanceof Error ? caught.message : "Something went wrong.",
+      );
     } finally {
-      setLoading(false);
+      setSummaryLoading(false);
     }
   }
+
+  const isConnected = connection.status === "connected";
 
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-10 lg:py-14">
@@ -104,36 +196,110 @@ function Health() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <a
-            className={buttonVariants({ variant: "outline", size: "lg" })}
-            href="/api/auth/google"
-          >
-            {connected ? "Reconnect Google" : "Connect Google Health"}
-          </a>
-          <Button disabled={loading} onClick={loadSummary} size="lg" type="button">
-            <RefreshCw className={loading ? "animate-spin" : undefined} />
-            {loading ? "Fetching…" : "Fetch summary"}
-          </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          {isConnected ? (
+            <>
+              <span className="inline-flex items-center gap-2 self-center text-sm text-muted-foreground">
+                <span
+                  aria-hidden="true"
+                  className="size-2 rounded-full bg-emerald-600"
+                />
+                Google Health connected
+              </span>
+              <Button
+                disabled={summaryLoading || linking}
+                onClick={loadSummary}
+                size="lg"
+                type="button"
+              >
+                <RefreshCw className={summaryLoading ? "animate-spin" : undefined} />
+                {summaryLoading ? "Fetching…" : "Fetch summary"}
+              </Button>
+            </>
+          ) : (
+            connection.status === "not_connected" && (
+              <Button
+                disabled={linking}
+                onClick={linkGoogle}
+                size="lg"
+                type="button"
+              >
+                {linking ? "Preparing…" : "Connect Google Health"}
+              </Button>
+            )
+          )}
         </div>
       </header>
 
-      {connected && !error && (
-        <p className="mt-6 text-sm text-emerald-700">
-          Google Health is connected for this browser session.
+      {connection.status === "loading" && (
+        <p className="mt-6 text-sm text-muted-foreground">
+          Checking your Google Health connection…
         </p>
       )}
 
-      {error && (
+      {connection.status === "not_connected" && (
+        <p className="mt-6 text-sm text-muted-foreground">
+          Connect Google Health to see your activity.
+        </p>
+      )}
+
+      {connection.status === "reconnect_required" && !reconnectDismissed && (
+        <div className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5">
+          <p className="font-medium text-amber-900">
+            Your Google Health connection has expired. Reconnect to continue
+            syncing your activity.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button
+              disabled={linking}
+              onClick={linkGoogle}
+              size="sm"
+              type="button"
+            >
+              {linking ? "Preparing…" : "Reconnect Google Health"}
+            </Button>
+            <Button
+              onClick={() => setReconnectDismissed(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Not now
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {connection.status === "unavailable" && (
+        <div className="mt-6 rounded-2xl bg-muted/50 p-5">
+          <p className="text-muted-foreground">
+            Google Health is temporarily unavailable. Try again shortly.
+          </p>
+          <Button
+            className="mt-4"
+            onClick={() => {
+              setConnection({ status: "loading" });
+              void loadConnection();
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {summaryError && (
         <p
           className="mt-6 rounded-2xl bg-destructive/10 p-4 text-sm text-destructive"
           role="alert"
         >
-          {error}
+          {summaryError}
         </p>
       )}
 
-      {!summary && !loading && (
+      {!summary && !summaryLoading && isConnected && (
         <Card className="mt-10 border-dashed bg-muted/30 text-center">
           <CardContent className="py-10">
             <Activity className="mx-auto size-10 text-primary" />

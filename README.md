@@ -11,13 +11,34 @@ bun --bun run dev
 
 ## Google Health API POC
 
-This app uses Google OAuth and the Google Health API v4 to read reconciled step
-records from the last seven days.
+This app reads reconciled Google Health activity (steps, distance, zone minutes,
+energy, workouts, and VO₂ max) from the last seven days using the Google Health
+API v4.
 
-1. In Google Cloud, enable the **Google Health API**.
+Users must **sign into a Pulseweb account first** (Better Auth, email/password or
+Google). Google Health is then connected as a **secondary Better Auth account**
+linked to that Pulseweb user — it is not a separate login. Connecting and reading
+data happens inside the protected `/health` page.
+
+Google OAuth access and refresh tokens are stored in **Cloudflare D1** in the
+linked Better Auth `account` row, never in browser cookies. Access tokens
+**refresh automatically** when they expire. A reconnect prompt appears only when
+Google Health cannot be used at all — for example if Google revokes or rejects
+the refresh token, or if the linked account is missing the required scope.
+Access-token expiry alone never triggers a reconnect.
+
+### Google Cloud configuration
+
+1. Enable the **Google Health API**.
 2. Create an OAuth 2.0 **Web application** client.
-3. Add `http://localhost:3000/api/auth/google/callback` as an authorized
-   redirect URI. Add the matching production URL before deploying.
+3. Add the Better Auth Google callback as an **authorized redirect URI** for both
+   local and production origins:
+
+   ```text
+   http://localhost:3000/api/auth/callback/google
+   https://<production-domain>/api/auth/callback/google
+   ```
+
 4. Add the
    `https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly`
    scope to the OAuth consent screen and add your Google account as a test user.
@@ -30,8 +51,15 @@ APP_ORIGIN="http://localhost:3000"
 ```
 
 For Cloudflare, store the client ID and secret with `wrangler secret put` and
-configure `APP_ORIGIN` to use the deployed HTTPS origin. The POC stores only a
-short-lived access token in an HTTP-only cookie, so reconnect after it expires.
+configure `APP_ORIGIN` to use the deployed HTTPS origin. Configure `APP_ORIGIN`
+and the matching authorized redirect URI for production before deploying.
+
+### Google OAuth testing-mode limitation
+
+While the external OAuth app's publishing status is `Testing`, Google normally
+issues **refresh tokens that expire after seven days**. Long-lived connection
+acceptance cannot be verified until the OAuth app has the appropriate production
+publishing status.
 
 # Database
 
