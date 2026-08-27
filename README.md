@@ -9,6 +9,48 @@ bun install
 bun --bun run dev
 ```
 
+## Google Health API POC
+
+This app uses Google OAuth and the Google Health API v4 to read reconciled step
+records from the last seven days.
+
+1. In Google Cloud, enable the **Google Health API**.
+2. Create an OAuth 2.0 **Web application** client.
+3. Add `http://localhost:3000/api/auth/google/callback` as an authorized
+   redirect URI. Add the matching production URL before deploying.
+4. Add the
+   `https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly`
+   scope to the OAuth consent screen and add your Google account as a test user.
+5. Create `.env.local`:
+
+```bash
+GOOGLE_CLIENT_ID="your-client-id"
+GOOGLE_CLIENT_SECRET="your-client-secret"
+APP_ORIGIN="http://localhost:3000"
+```
+
+For Cloudflare, store the client ID and secret with `wrangler secret put` and
+configure `APP_ORIGIN` to use the deployed HTTPS origin. The POC stores only a
+short-lived access token in an HTTP-only cookie, so reconnect after it expires.
+
+# Database
+
+Drizzle ORM connects to the existing Cloudflare D1 database through the
+`prod_pulseweb_db` binding in `wrangler.jsonc`. Define tables in
+`src/db/schema.ts`, then generate and apply migrations with:
+
+```bash
+bun run db:generate
+bun run db:migrate
+```
+
+`bun run dev` uses the local D1 database stored in `.wrangler`. Apply migrations
+to the remote D1 database only when intended:
+
+```bash
+bun run db:migrate:remote
+```
+
 # Building For Production
 
 To build this application for production:

@@ -26,7 +26,7 @@ function AppLayout() {
             <NavigationRail
                 items={[
                     { href: "/", icon: Home, label: "Home" },
-                    { href: "/activity", icon: Activity, label: "Activity" },
+                    { href: "/health", icon: Activity, label: "Health" },
                     { href: "/connections", icon: Link2, label: "Connections" },
                     { href: "/settings", icon: Settings, label: "Settings" },
                 ]}
