@@ -200,7 +200,7 @@ function SignupPage() {
                 Already have an account?{" "}
                 <Link
                   className="font-semibold text-primary underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  search={{ error: undefined }}
+                  search={{ redirect: undefined, error: undefined }}
                   to="/login"
                 >
                   Sign in
