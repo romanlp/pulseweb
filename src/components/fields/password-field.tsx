@@ -5,7 +5,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useFieldContext } from "#/lib/tanstack-form.context"
 
-function PasswordField({ label = "Password" }: { label?: string }) {
+function PasswordField({
+  autoComplete = "current-password",
+  label = "Password",
+}: {
+  autoComplete?: string
+  label?: string
+}) {
   const field = useFieldContext<string>()
   const [showPassword, setShowPassword] = useState(false)
   const error = field.state.meta.errors.map(getErrorMessage).find(Boolean)
@@ -18,7 +24,7 @@ function PasswordField({ label = "Password" }: { label?: string }) {
         <Input
           aria-describedby={error ? errorId : undefined}
           aria-invalid={Boolean(error)}
-          autoComplete="current-password"
+          autoComplete={autoComplete}
           className="pr-12"
           id={field.name}
           name={field.name}
