@@ -1,12 +1,13 @@
 import {
-  withGoogleHealthAccessToken,
-  type HealthApiError,
-} from "@/lib/google-health-auth.server";
+  withGoogleAccessToken,
+  type GoogleConnectionError,
+} from "@/lib/google-connection/index.server";
+import { GOOGLE_HEALTH_SCOPES } from "@/lib/google-health-config";
 import { GoogleHealthError } from "@/lib/google-health.server";
 
-export function healthApiErrorStatus(error: HealthApiError) {
+export function healthApiErrorStatus(error: GoogleConnectionError) {
   if (error.code === "UNAUTHENTICATED") return 401;
-  if (error.code === "GOOGLE_HEALTH_UNAVAILABLE") return 503;
+  if (error.code === "GOOGLE_UNAVAILABLE") return 503;
   return 409;
 }
 
@@ -17,7 +18,15 @@ export async function handleHealthOperation<T>(
   let result;
 
   try {
-    result = await withGoogleHealthAccessToken(request, operation);
+    result = await withGoogleAccessToken(
+      request,
+      {
+        requiredScopes: GOOGLE_HEALTH_SCOPES,
+        isUnauthorized: (error) =>
+          error instanceof GoogleHealthError && error.status === 401,
+      },
+      operation,
+    );
   } catch (error) {
     const googleError =
       error instanceof GoogleHealthError ? error : undefined;

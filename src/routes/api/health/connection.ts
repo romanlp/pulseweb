@@ -1,14 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { getGoogleHealthConnectionStatus } from "@/lib/google-health-auth.server";
-import { disconnectGoogleHealth } from "@/lib/google-health-disconnect.server";
+import {
+  disconnectGoogleConnection,
+  getGoogleConnectionStatus,
+} from "@/lib/google-connection/index.server";
+import { GOOGLE_HEALTH_SCOPES } from "@/lib/google-health-config";
 import { healthApiErrorStatus } from "@/lib/health-endpoint.server";
 
 export const Route = createFileRoute("/api/health/connection")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const result = await getGoogleHealthConnectionStatus(request);
+        const result = await getGoogleConnectionStatus(request, {
+          requiredScopes: GOOGLE_HEALTH_SCOPES,
+        });
 
         if (!result.ok) {
           return Response.json(result.error, {
@@ -22,7 +27,7 @@ export const Route = createFileRoute("/api/health/connection")({
         });
       },
       DELETE: async ({ request }) => {
-        const result = await disconnectGoogleHealth(request);
+        const result = await disconnectGoogleConnection(request);
 
         if (!result.ok) {
           return Response.json(result.error, {

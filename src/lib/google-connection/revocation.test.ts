@@ -5,7 +5,7 @@ import {
   GoogleOAuthRevocationError,
   revokeGoogleOAuthToken,
   revokeThenUnlinkGoogleAccount,
-} from "./google-oauth-revocation.server.ts";
+} from "./revocation.server.ts";
 
 describe("revokeGoogleOAuthToken", () => {
   it("posts the token to Google's revocation endpoint", async () => {

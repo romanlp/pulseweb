@@ -15,7 +15,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply prod-pulseweb-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply prod-pulseweb-db --remote",
-    "test:google-auth": "node --test src/lib/google-health-*.test.ts src/lib/google-oauth-revocation.test.ts"
+    "test:google-auth": "node --test src/lib/google-connection/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

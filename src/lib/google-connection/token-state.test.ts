@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import {
   hasUsableAccessToken,
   resolveUsableAccessToken,
-} from "./google-health-token-state.ts";
+} from "./token-state.ts";
 
 const now = Date.parse("2026-08-27T12:00:00.000Z");
 

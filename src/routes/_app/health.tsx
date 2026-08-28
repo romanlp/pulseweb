@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
-import { authClient } from "@/lib/auth-client";
+import { connectGoogleAccount } from "@/lib/google-connection/client";
+import { GOOGLE_HEALTH_SCOPES } from "@/lib/google-health-config";
 import { Button } from "#/components/ui/button";
 import {
   Card,
@@ -130,25 +131,10 @@ function Health() {
     setSummaryError(undefined);
 
     try {
-      const result = await authClient.linkSocial({
-        provider: "google",
+      await connectGoogleAccount({
         callbackURL: "/health?connected=1",
-        scopes: [
-          "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly",
-        ],
-        additionalParams: {
-          access_type: "offline",
-          prompt: "consent",
-        },
+        scopes: GOOGLE_HEALTH_SCOPES,
       });
-
-      if (result.error || !result.data?.redirect) {
-        throw new Error(
-          result.error?.message ?? "Unable to start Google Health linking.",
-        );
-      }
-
-      window.location.href = result.data.url;
     } catch (caught) {
       setLinking(false);
       setSummaryError(
