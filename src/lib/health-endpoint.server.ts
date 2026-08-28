@@ -1,5 +1,14 @@
-import { withGoogleHealthAccessToken } from "@/lib/google-health-auth.server";
+import {
+  withGoogleHealthAccessToken,
+  type HealthApiError,
+} from "@/lib/google-health-auth.server";
 import { GoogleHealthError } from "@/lib/google-health.server";
+
+export function healthApiErrorStatus(error: HealthApiError) {
+  if (error.code === "UNAUTHENTICATED") return 401;
+  if (error.code === "GOOGLE_HEALTH_UNAVAILABLE") return 503;
+  return 409;
+}
 
 export async function handleHealthOperation<T>(
   request: Request,
@@ -29,7 +38,7 @@ export async function handleHealthOperation<T>(
 
   if (!result.ok) {
     return Response.json(result.error, {
-      status: result.error.code === "UNAUTHENTICATED" ? 401 : 409,
+      status: healthApiErrorStatus(result.error),
       headers: { "Cache-Control": "no-store" },
     });
   }

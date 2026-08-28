@@ -1,5 +1,13 @@
+import { and, eq } from "drizzle-orm";
+
+import { account as accountTable } from "@/db/auth-schema";
+import { getDb } from "@/db/db-client.server";
 import { auth } from "@/lib/auth";
 import { GoogleHealthError } from "@/lib/google-health.server";
+import {
+  resolveUsableAccessToken,
+  type AccessTokenResolution,
+} from "@/lib/google-health-token-state";
 
 export const GOOGLE_HEALTH_SCOPE =
   "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly";
@@ -77,6 +85,21 @@ async function resolveHealthAccount(
     return { kind: "reconnect_required", reason: "missing_scope" };
   }
 
+  const [storedAccount] = await getDb()
+    .select({ refreshToken: accountTable.refreshToken })
+    .from(accountTable)
+    .where(
+      and(
+        eq(accountTable.id, googleAccount.id),
+        eq(accountTable.userId, session.user.id),
+      ),
+    )
+    .limit(1);
+
+  if (!storedAccount?.refreshToken) {
+    return { kind: "reconnect_required", reason: "missing_refresh_token" };
+  }
+
   return { kind: "connected", accountId: googleAccount.id };
 }
 
@@ -103,48 +126,61 @@ function reconnectRequiredError(): HealthApiError {
   };
 }
 
+function temporarilyUnavailableError(): HealthApiError {
+  return {
+    code: "GOOGLE_HEALTH_UNAVAILABLE",
+    message: "Google Health is temporarily unavailable. Try again shortly.",
+  };
+}
+
+function tokenResolutionError(
+  resolution: Exclude<AccessTokenResolution, { status: "usable" }>,
+): HealthApiError {
+  return resolution.status === "reconnect_required"
+    ? reconnectRequiredError()
+    : temporarilyUnavailableError();
+}
+
+async function readValidAccessToken(request: Request, accountId: string) {
+  return resolveUsableAccessToken(() =>
+    auth.api.getAccessToken({
+      headers: request.headers,
+      body: { accountId },
+    }),
+  );
+}
 
 export async function getGoogleHealthAccessToken(
   request: Request,
 ): Promise<GoogleHealthAccessTokenResult> {
-  const resolved = await resolveHealthAccount(request);
+  let resolved: ResolvedHealthAccount;
+  try {
+    resolved = await resolveHealthAccount(request);
+  } catch {
+    return { ok: false, error: temporarilyUnavailableError() };
+  }
 
   if (resolved.kind !== "connected") {
     return { ok: false, error: unresolvedError(resolved) };
   }
 
-  try {
-    const tokens = await auth.api.getAccessToken({
-      headers: request.headers,
-      body: { accountId: resolved.accountId },
-    });
-
-    if (!tokens.accessToken) {
-      return {
-        ok: false,
-        error: {
-          code: "GOOGLE_HEALTH_RECONNECT_REQUIRED",
-          message: "Your Google Health connection needs to be re-established.",
-        },
-      };
-    }
-
-    return { ok: true, accessToken: tokens.accessToken };
-  } catch {
-    return {
-      ok: false,
-      error: {
-        code: "GOOGLE_HEALTH_RECONNECT_REQUIRED",
-        message: "Your Google Health connection needs to be re-established.",
-      },
-    };
+  const token = await readValidAccessToken(request, resolved.accountId);
+  if (token.status !== "usable") {
+    return { ok: false, error: tokenResolutionError(token) };
   }
+
+  return { ok: true, accessToken: token.accessToken };
 }
 
 export async function getGoogleHealthConnectionStatus(
   request: Request,
 ): Promise<GoogleHealthConnectionResult> {
-  const resolved = await resolveHealthAccount(request);
+  let resolved: ResolvedHealthAccount;
+  try {
+    resolved = await resolveHealthAccount(request);
+  } catch {
+    return { ok: false, error: temporarilyUnavailableError() };
+  }
 
   if (resolved.kind === "unauthenticated") {
     return {
@@ -167,18 +203,18 @@ export async function getGoogleHealthConnectionStatus(
     };
   }
 
-  try {
-    await auth.api.getAccessToken({
-      headers: request.headers,
-      body: { accountId: resolved.accountId },
-    });
-    return { ok: true, status: { status: "connected" } };
-  } catch {
+  const token = await readValidAccessToken(request, resolved.accountId);
+  if (token.status === "reconnect_required") {
     return {
       ok: true,
       status: { status: "reconnect_required", reason: "refresh_failed" },
     };
   }
+  if (token.status === "temporarily_unavailable") {
+    return { ok: false, error: temporarilyUnavailableError() };
+  }
+
+  return { ok: true, status: { status: "connected" } };
 }
 
 /**
@@ -199,54 +235,52 @@ export async function withGoogleHealthAccessToken<T>(
   request: Request,
   operation: (accessToken: string) => Promise<T>,
 ): Promise<GoogleHealthOperationResult<T>> {
-  const resolved = await resolveHealthAccount(request);
+  let resolved: ResolvedHealthAccount;
+  try {
+    resolved = await resolveHealthAccount(request);
+  } catch {
+    return { ok: false, error: temporarilyUnavailableError() };
+  }
 
   if (resolved.kind !== "connected") {
     return { ok: false, error: unresolvedError(resolved) };
   }
   const accountId = resolved.accountId;
 
-  const readToken = async () => {
-    const tokens = await auth.api.getAccessToken({
-      headers: request.headers,
-      body: { accountId },
-    });
-
-    if (!tokens.accessToken) {
-      throw new Error("Google Health returned no access token.");
-    }
-
-    return tokens.accessToken;
-  };
-
-  let accessToken: string;
-  try {
-    accessToken = await readToken();
-  } catch {
-    return { ok: false, error: reconnectRequiredError() };
+  const initialToken = await readValidAccessToken(request, accountId);
+  if (initialToken.status !== "usable") {
+    return { ok: false, error: tokenResolutionError(initialToken) };
   }
 
   try {
-    return { ok: true, data: await operation(accessToken) };
+    return { ok: true, data: await operation(initialToken.accessToken) };
   } catch (error) {
     if (!(error instanceof GoogleHealthError) || error.status !== 401) {
       throw error;
     }
   }
 
-  let refreshedToken: string;
   try {
     await auth.api.refreshToken({
       headers: request.headers,
       body: { accountId },
     });
-    refreshedToken = await readToken();
   } catch {
-    return { ok: false, error: reconnectRequiredError() };
+    // Better Auth does not preserve Google's OAuth error reason here, so this
+    // could be either an invalid grant or a transient provider/storage error.
+    return { ok: false, error: temporarilyUnavailableError() };
+  }
+
+  const refreshedToken = await readValidAccessToken(request, accountId);
+  if (refreshedToken.status !== "usable") {
+    return { ok: false, error: tokenResolutionError(refreshedToken) };
   }
 
   try {
-    return { ok: true, data: await operation(refreshedToken) };
+    return {
+      ok: true,
+      data: await operation(refreshedToken.accessToken),
+    };
   } catch (error) {
     if (error instanceof GoogleHealthError && error.status === 401) {
       return { ok: false, error: reconnectRequiredError() };

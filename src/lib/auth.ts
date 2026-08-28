@@ -8,6 +8,7 @@ export const auth = betterAuth({
         provider: "sqlite",
     }),
     account: {
+        encryptOAuthTokens: true,
         accountLinking: {
             enabled: true,
             disableImplicitLinking: true,

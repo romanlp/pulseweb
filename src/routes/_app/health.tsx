@@ -8,6 +8,7 @@ import {
   MapPinned,
   RefreshCw,
   Timer,
+  Unplug,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -78,6 +79,8 @@ function Health() {
   });
   const [reconnectDismissed, setReconnectDismissed] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [disconnectConfirming, setDisconnectConfirming] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [summary, setSummary] = useState<HealthSummaryResponse>();
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string>();
@@ -180,6 +183,38 @@ function Health() {
     }
   }
 
+  async function disconnectGoogle() {
+    setDisconnecting(true);
+    setSummaryError(undefined);
+
+    try {
+      const response = await fetch("/api/health/connection", {
+        method: "DELETE",
+      });
+      const body = (await response.json().catch(() => undefined)) as
+        | { message?: string }
+        | undefined;
+
+      if (!response.ok) {
+        throw new Error(
+          body?.message ?? "Unable to disconnect Google Health.",
+        );
+      }
+
+      setSummary(undefined);
+      setConnection({ status: "not_connected" });
+      setDisconnectConfirming(false);
+    } catch (caught) {
+      setSummaryError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to disconnect Google Health.",
+      );
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
   const isConnected = connection.status === "connected";
 
   return (
@@ -207,13 +242,23 @@ function Health() {
                 Google Health connected
               </span>
               <Button
-                disabled={summaryLoading || linking}
+                disabled={summaryLoading || linking || disconnecting}
                 onClick={loadSummary}
                 size="lg"
                 type="button"
               >
                 <RefreshCw className={summaryLoading ? "animate-spin" : undefined} />
                 {summaryLoading ? "Fetching…" : "Fetch summary"}
+              </Button>
+              <Button
+                disabled={disconnecting}
+                onClick={() => setDisconnectConfirming(true)}
+                size="lg"
+                type="button"
+                variant="outline"
+              >
+                <Unplug />
+                Disconnect
               </Button>
             </>
           ) : (
@@ -230,6 +275,42 @@ function Health() {
           )}
         </div>
       </header>
+
+      {disconnectConfirming &&
+        (isConnected || connection.status === "reconnect_required") && (
+        <section
+          aria-labelledby="disconnect-google-heading"
+          className="mt-6 rounded-2xl border bg-card p-5 shadow-sm"
+        >
+          <h2 className="font-medium" id="disconnect-google-heading">
+            Disconnect Google Health?
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This revokes Pulseweb&apos;s Google access and removes the linked
+            Google account from your Pulseweb account. You can reconnect later.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button
+              disabled={disconnecting}
+              onClick={() => void disconnectGoogle()}
+              size="sm"
+              type="button"
+              variant="destructive"
+            >
+              {disconnecting ? "Disconnecting…" : "Revoke and disconnect"}
+            </Button>
+            <Button
+              disabled={disconnecting}
+              onClick={() => setDisconnectConfirming(false)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Cancel
+            </Button>
+          </div>
+        </section>
+      )}
 
       {connection.status === "loading" && (
         <p className="mt-6 text-sm text-muted-foreground">
@@ -265,6 +346,15 @@ function Health() {
               variant="outline"
             >
               Not now
+            </Button>
+            <Button
+              disabled={disconnecting}
+              onClick={() => setDisconnectConfirming(true)}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              Disconnect instead
             </Button>
           </div>
         </div>
