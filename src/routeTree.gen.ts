@@ -13,8 +13,12 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppHealthRouteImport } from './routes/_app/health'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiDbHealthRouteImport } from './routes/api/db/health'
+import { Route as ApiHealthConnectionRouteImport } from './routes/api/health/connection'
+import { Route as ApiHealthStepsRouteImport } from './routes/api/health/steps'
+import { Route as ApiHealthSummaryRouteImport } from './routes/api/health/summary'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -35,6 +39,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHealthRoute = AppHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => AppRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -45,43 +54,92 @@ const ApiDbHealthRoute = ApiDbHealthRouteImport.update({
   path: '/api/db/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthConnectionRoute = ApiHealthConnectionRouteImport.update({
+  id: '/api/health/connection',
+  path: '/api/health/connection',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthStepsRoute = ApiHealthStepsRouteImport.update({
+  id: '/api/health/steps',
+  path: '/api/health/steps',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthSummaryRoute = ApiHealthSummaryRouteImport.update({
+  id: '/api/health/summary',
+  path: '/api/health/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/health': typeof AppHealthRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
+  '/api/health/connection': typeof ApiHealthConnectionRoute
+  '/api/health/steps': typeof ApiHealthStepsRoute
+  '/api/health/summary': typeof ApiHealthSummaryRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/health': typeof AppHealthRoute
   '/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
+  '/api/health/connection': typeof ApiHealthConnectionRoute
+  '/api/health/steps': typeof ApiHealthStepsRoute
+  '/api/health/summary': typeof ApiHealthSummaryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_app/health': typeof AppHealthRoute
   '/_app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
+  '/api/health/connection': typeof ApiHealthConnectionRoute
+  '/api/health/steps': typeof ApiHealthStepsRoute
+  '/api/health/summary': typeof ApiHealthSummaryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup' | '/api/auth/$' | '/api/db/health'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/health'
+    | '/api/auth/$'
+    | '/api/db/health'
+    | '/api/health/connection'
+    | '/api/health/steps'
+    | '/api/health/summary'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/signup' | '/' | '/api/auth/$' | '/api/db/health'
+  to:
+    | '/login'
+    | '/signup'
+    | '/health'
+    | '/'
+    | '/api/auth/$'
+    | '/api/db/health'
+    | '/api/health/connection'
+    | '/api/health/steps'
+    | '/api/health/summary'
   id:
     | '__root__'
     | '/_app'
     | '/login'
     | '/signup'
+    | '/_app/health'
     | '/_app/'
     | '/api/auth/$'
     | '/api/db/health'
+    | '/api/health/connection'
+    | '/api/health/steps'
+    | '/api/health/summary'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -90,6 +148,9 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiDbHealthRoute: typeof ApiDbHealthRoute
+  ApiHealthConnectionRoute: typeof ApiHealthConnectionRoute
+  ApiHealthStepsRoute: typeof ApiHealthStepsRoute
+  ApiHealthSummaryRoute: typeof ApiHealthSummaryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -122,6 +183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/health': {
+      id: '/_app/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof AppHealthRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -136,14 +204,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDbHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health/connection': {
+      id: '/api/health/connection'
+      path: '/api/health/connection'
+      fullPath: '/api/health/connection'
+      preLoaderRoute: typeof ApiHealthConnectionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/steps': {
+      id: '/api/health/steps'
+      path: '/api/health/steps'
+      fullPath: '/api/health/steps'
+      preLoaderRoute: typeof ApiHealthStepsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/summary': {
+      id: '/api/health/summary'
+      path: '/api/health/summary'
+      fullPath: '/api/health/summary'
+      preLoaderRoute: typeof ApiHealthSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppHealthRoute: typeof AppHealthRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppHealthRoute: AppHealthRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -155,6 +246,9 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiDbHealthRoute: ApiDbHealthRoute,
+  ApiHealthConnectionRoute: ApiHealthConnectionRoute,
+  ApiHealthStepsRoute: ApiHealthStepsRoute,
+  ApiHealthSummaryRoute: ApiHealthSummaryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,17 +1,122 @@
-Welcome to your new TanStack Start app!
+# Pulseweb
 
-# Getting Started
+Pulseweb is a TanStack Start application deployed to Cloudflare Workers. Users
+sign in with Better Auth, then explicitly link a Google account for Google
+Health access.
 
-To run this application:
+## Local development
+
+Install dependencies and create the local environment file:
 
 ```bash
 bun install
+cp .env.example .env.local
+```
+
+Replace every placeholder in `.env.local`. Generate `BETTER_AUTH_SECRET` with a
+cryptographically secure value of at least 32 bytes, for example:
+
+```bash
+openssl rand -base64 32
+```
+
+Apply the local D1 migrations and start the app:
+
+```bash
+bun run db:migrate
 bun --bun run dev
 ```
 
-# Building For Production
+## Google OAuth configuration
 
-To build this application for production:
+Pulseweb uses Better Auth's Google provider for both Google sign-in and explicit
+Google Health account linking. Better Auth owns the OAuth state, PKCE, callback,
+token exchange, and token refresh flow. OAuth tokens are stored in the linked
+Better Auth `account` row in D1 and are encrypted before persistence.
+
+### Google Cloud
+
+1. Enable the **Google Health API** in the appropriate Google Cloud project.
+2. Configure the OAuth consent screen. Request only
+   `https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly`.
+3. Create an OAuth 2.0 **Web application** client.
+4. Register these exact authorized redirect URIs:
+
+   ```text
+   http://localhost:3000/api/auth/callback/google
+   https://<production-domain>/api/auth/callback/google
+   ```
+
+The scheme, host, port, path, and trailing slash must match exactly. The
+production URI must use HTTPS. Use separate Google Cloud projects or OAuth
+clients for development and production.
+
+While an external consent screen remains in **Testing**, add each developer as
+a test user. Google refresh tokens for sensitive scopes normally expire after
+seven days in this mode, so long-lived connection testing requires the
+appropriate production publishing and verification status.
+
+### Required environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `BETTER_AUTH_URL` | Canonical app origin, without a trailing slash. Better Auth derives the callback from this value. |
+| `BETTER_AUTH_SECRET` | Stable high-entropy key used to sign auth state and encrypt stored OAuth tokens. |
+| `GOOGLE_CLIENT_ID` | OAuth web-client ID for the current environment. |
+| `GOOGLE_CLIENT_SECRET` | OAuth web-client secret for the current environment. |
+
+Do not rotate `BETTER_AUTH_SECRET` casually: changing it invalidates signed auth
+state and can make encrypted OAuth tokens unreadable. Use Better Auth's
+versioned-secret rotation support for a planned rotation.
+
+If OAuth rows existed before `encryptOAuthTokens` was enabled, audit or replace
+those rows before production. Enabling encryption protects newly written token
+values but is not a complete migration of every existing plaintext value.
+
+### Cloudflare production setup
+
+Set `BETTER_AUTH_URL` and `GOOGLE_CLIENT_ID` as environment-specific Worker
+variables, using the production origin and production Google client. Store the
+sensitive values with Wrangler:
+
+```bash
+bunx wrangler secret put BETTER_AUTH_SECRET
+bunx wrangler secret put GOOGLE_CLIENT_SECRET
+```
+
+Then apply D1 migrations and deploy:
+
+```bash
+bun run db:migrate:remote
+bun run deploy
+```
+
+Do not reuse production secrets in local development or preview environments.
+Before releasing, confirm the deployed Worker has all four variables and that
+`BETTER_AUTH_URL` matches the authorized production callback's origin.
+
+### OAuth smoke test
+
+Before a release, verify:
+
+1. Email/password and Google sign-in both create valid Pulseweb sessions.
+2. An authenticated user can explicitly connect Google Health.
+3. The callback returns to `/health` without `redirect_uri_mismatch` or state
+   errors.
+4. Reloading and signing in from a new browser session preserves the connection.
+5. An expired access token refreshes without user interaction.
+6. A missing or rejected refresh token produces `reconnect_required`.
+7. OAuth tokens never appear in browser storage, URLs, client responses, or logs.
+
+Official references:
+
+- [Better Auth configuration](https://better-auth.com/docs/reference/options)
+- [Better Auth Google provider](https://better-auth.com/docs/authentication/google)
+- [Google OAuth web-server flow](https://developers.google.com/identity/protocols/oauth2/web-server)
+- [Google OAuth production policies](https://developers.google.com/identity/protocols/oauth2/policies)
+- [Cloudflare environment variables](https://developers.cloudflare.com/workers/configuration/environment-variables/)
+
+## Building for production
 
 ```bash
 bun --bun run build
@@ -29,20 +134,6 @@ If you prefer not to use Tailwind CSS:
 2. Replace the Tailwind import in `src/styles.css` with your own styles
 3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
 4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
-
-## Deploy to Cloudflare Workers
-
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
-
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
-
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
-
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
 
 
 ## Routing
