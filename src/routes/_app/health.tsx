@@ -11,6 +11,7 @@ import {
   Unplug,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { z } from "zod";
 
 import { connectGoogleAccount } from "@/lib/google-connection/client";
 import { GOOGLE_HEALTH_SCOPES } from "@/lib/google-health-config";
@@ -23,39 +24,55 @@ import {
   CardTitle,
 } from "#/components/ui/card";
 
-type HealthSummaryResponse = {
-  from: string;
-  to: string;
-  steps: {
-    total: number;
-    sampleCount: number;
-    recent: Array<{
-      count: number;
-      startTime: string;
-      endTime: string;
-    }>;
-  };
-  distanceKm: number | null;
-  activeZoneMinutes: number | null;
-  caloriesKcal: number | null;
-  vo2Max: {
-    value: number;
-    level: string | null;
-    date: string;
-  } | null;
-  workouts: Array<{
-    type: string;
-    name: string;
-    startTime: string;
-    endTime: string;
-    activeMinutes: number | null;
-    distanceKm: number | null;
-    caloriesKcal: number | null;
-    averageHeartRate: number | null;
-    activeZoneMinutes: number | null;
-    runVo2Max: number | null;
-  }>;
-};
+const healthSummaryResponseSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  steps: z.object({
+    total: z.number(),
+    sampleCount: z.number(),
+    recent: z.array(
+      z.object({
+        count: z.number(),
+        startTime: z.string(),
+        endTime: z.string(),
+      }),
+    ),
+  }),
+  distanceKm: z.number().nullable(),
+  activeZoneMinutes: z.number().nullable(),
+  caloriesKcal: z.number().nullable(),
+  vo2Max: z
+    .object({
+      value: z.number(),
+      level: z.string().nullable(),
+      date: z.string(),
+    })
+    .nullable(),
+  workouts: z.array(
+    z.object({
+      type: z.string(),
+      name: z.string(),
+      startTime: z.string(),
+      endTime: z.string(),
+      activeMinutes: z.number().nullable(),
+      distanceKm: z.number().nullable(),
+      caloriesKcal: z.number().nullable(),
+      averageHeartRate: z.number().nullable(),
+      activeZoneMinutes: z.number().nullable(),
+      runVo2Max: z.number().nullable(),
+    }),
+  ),
+});
+
+type HealthSummaryResponse = z.infer<typeof healthSummaryResponseSchema>;
+
+const connectionResponseSchema = z.object({
+  status: z.enum(["connected", "not_connected", "reconnect_required"]),
+});
+
+const errorResponseSchema = z.object({
+  message: z.string().optional(),
+});
 
 type ConnectionState =
   | { status: "loading" }
@@ -65,9 +82,13 @@ type ConnectionState =
   | { status: "unavailable" };
 
 export const Route = createFileRoute("/_app/health")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    connected: search.connected === "1" ? true : undefined,
-    error: typeof search.error === "string" ? search.error : undefined,
+  validateSearch: z.object({
+    connected: z
+      .literal("1")
+      .transform(() => true)
+      .optional()
+      .catch(undefined),
+    error: z.string().optional().catch(undefined),
   }),
   component: Health,
 });
@@ -97,9 +118,7 @@ function Health() {
         return;
       }
 
-      const body = (await response.json()) as {
-        status: "connected" | "not_connected" | "reconnect_required";
-      };
+      const body = connectionResponseSchema.parse(await response.json());
 
       setConnection(
         body.status === "connected" || body.status === "not_connected"
@@ -151,15 +170,18 @@ function Health() {
 
     try {
       const response = await fetch("/api/health/summary");
-      const body = (await response.json()) as HealthSummaryResponse & {
-        message?: string;
-      };
+      const responseBody = await response.json();
 
       if (!response.ok) {
-        throw new Error(body.message ?? "Unable to fetch your health summary.");
+        const errorBody = errorResponseSchema.safeParse(responseBody);
+        throw new Error(
+          errorBody.success
+            ? (errorBody.data.message ?? "Unable to fetch your health summary.")
+            : "Unable to fetch your health summary.",
+        );
       }
 
-      setSummary(body);
+      setSummary(healthSummaryResponseSchema.parse(responseBody));
     } catch (caught) {
       setSummaryError(
         caught instanceof Error ? caught.message : "Something went wrong.",
@@ -177,13 +199,15 @@ function Health() {
       const response = await fetch("/api/health/connection", {
         method: "DELETE",
       });
-      const body = (await response.json().catch(() => undefined)) as
-        | { message?: string }
-        | undefined;
+      const body = errorResponseSchema.safeParse(
+        await response.json().catch(() => undefined),
+      );
 
       if (!response.ok) {
         throw new Error(
-          body?.message ?? "Unable to disconnect Google Health.",
+          body.success
+            ? (body.data.message ?? "Unable to disconnect Google Health.")
+            : "Unable to disconnect Google Health.",
         );
       }
 

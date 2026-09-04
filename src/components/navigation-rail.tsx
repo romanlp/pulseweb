@@ -28,13 +28,13 @@ function NavigationRail({
     <nav
       aria-label="Primary navigation"
       className={cn(
-        "hidden w-20 shrink-0 flex-col items-center border-r border-sidebar-border bg-sidebar px-2 py-4 text-sidebar-foreground md:flex",
+        "hidden w-22 shrink-0 flex-col items-center border-r border-sidebar-border bg-surface-2 px-2 py-4 text-sidebar-foreground md:flex",
         className,
       )}
     >
       <a
         aria-label={brandLabel}
-        className="mb-8 inline-flex size-12 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+        className="mb-8 inline-flex size-14 items-center justify-center rounded-xl bg-tertiary-container text-on-tertiary-container shadow-sm transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
         href="/"
       >
         <HeartPulse aria-hidden="true" className="size-6" />
@@ -57,7 +57,7 @@ function NavigationRail({
                 className={cn(
                   "relative flex h-8 w-14 items-center justify-center rounded-full text-sidebar-foreground transition-colors group-hover:bg-sidebar-accent group-focus-visible:ring-2 group-focus-visible:ring-sidebar-ring",
                   isActive &&
-                    "bg-sidebar-primary text-sidebar-primary-foreground group-hover:bg-sidebar-primary",
+                    "bg-secondary-container text-on-secondary-container group-hover:bg-sidebar-primary",
                 )}
               >
                 <Icon aria-hidden="true" className="size-6" strokeWidth={2} />

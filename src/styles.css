@@ -61,11 +61,18 @@ body {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+
+  --color-secondary-container: var(--mio-theme-color-secondary-container);
+  --color-on-secondary-container: var(--mio-theme-color-on-secondary-container);
+  --color-tertiary-container: var(--mio-theme-color-tertiary-container);
+  --color-on-tertiary-container: var(--mio-theme-color-on-tertiary-container);
+  --color-surface-2: var(--mio-theme-color-surface-2);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.3);
+  --background: oklch(0.991 0.006 317.753);
+  --foreground: oklch(0.224 0.004 308.257);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.147 0.004 49.3);
   --popover: oklch(1 0 0);
@@ -96,6 +103,14 @@ body {
   --sidebar-accent-foreground: oklch(0.214 0.009 43.1);
   --sidebar-border: oklch(0.922 0.005 34.3);
   --sidebar-ring: oklch(0.714 0.014 41.2);
+
+  --mio-theme-color-secondary-container: oklch(0.898 0.037 289.037);
+  --mio-theme-color-on-secondary-container: oklch(0.23 0.038 305.357);
+  --mio-theme-color-tertiary-container: oklch(0.903 0.06 319.086);
+  --mio-theme-color-on-tertiary-container: oklch(0.232 0.057 314.002);
+
+  --mio-theme-color-surface-2: oklch(0.948 0.007 354.8);
+  --mio-theme-color-on-surface-variant-2: linear-gradient(0deg, rgb(77 66 86 / 8%), rgb(77 66 86 / 8%));
 }
 
 .dark {
@@ -130,6 +145,10 @@ body {
   --sidebar-accent-foreground: oklch(0.986 0.002 67.8);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.547 0.021 43.1);
+
+  --mio-theme-color-surface-2: oklch(0.948 0.007 354.8);
+  --mio-theme-color-secondary-container: oklch(0.898 0.037 289.037);
+  --mio-theme-color-on-surface-variant-2: linear-gradient(0deg, rgb(77 66 86 / 8%), rgb(77 66 86 / 8%));
 }
 
 @layer base {
