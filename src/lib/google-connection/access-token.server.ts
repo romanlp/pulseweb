@@ -22,7 +22,7 @@ export async function runWithGoogleAccessToken<T>(
   request: Request,
   accountId: string,
   operation: (accessToken: string) => Promise<T>,
-  isUnauthorized: (error: unknown) => boolean,
+  isUnauthorized: (error: Error) => boolean,
 ): Promise<AccessTokenOperationResult<T>> {
   const initialToken = await readGoogleAccessToken(request, accountId);
   if (initialToken.status !== "usable") return initialToken;
@@ -33,7 +33,7 @@ export async function runWithGoogleAccessToken<T>(
       data: await operation(initialToken.accessToken),
     };
   } catch (error) {
-    if (!isUnauthorized(error)) throw error;
+    if (!(error instanceof Error) || !isUnauthorized(error)) throw error;
   }
 
   let refreshedTokens;
@@ -59,7 +59,9 @@ export async function runWithGoogleAccessToken<T>(
       data: await operation(refreshedToken.accessToken),
     };
   } catch (error) {
-    if (isUnauthorized(error)) return { status: "reconnect_required" };
+    if (error instanceof Error && isUnauthorized(error)) {
+      return { status: "reconnect_required" };
+    }
     throw error;
   }
 }

@@ -15,8 +15,8 @@ import { authClient } from "@/lib/auth-client"
 import { useAppForm } from "@/lib/tanstack-form"
 
 export const Route = createFileRoute("/signup")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    error: typeof search.error === "string" ? search.error : undefined,
+  validateSearch: z.object({
+    error: z.string().optional().catch(undefined),
   }),
   component: SignupPage,
 })

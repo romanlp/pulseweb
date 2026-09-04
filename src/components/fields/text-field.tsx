@@ -1,11 +1,12 @@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { firstFieldErrorMessage } from "@/components/fields/field-error"
 import { useFieldContext } from "#/lib/tanstack-form.context"
 
 
 function TextField({ label }: { label: string }) {
   const field = useFieldContext<string>()
-  const error = field.state.meta.errors.map(getErrorMessage).find(Boolean)
+  const error = firstFieldErrorMessage(field.state.meta.errors)
   const errorId = `${field.name}-error`
 
   return (
@@ -29,14 +30,6 @@ function TextField({ label }: { label: string }) {
       )}
     </div>
   )
-}
-
-function getErrorMessage(error: unknown) {
-  if (typeof error === "string") return error
-  if (error && typeof error === "object" && "message" in error) {
-    return String(error.message)
-  }
-  return undefined
 }
 
 export {TextField}

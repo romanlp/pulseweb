@@ -19,22 +19,23 @@ export async function disconnectGoogleConnection(
     }
     if (account.kind === "not_connected") return { ok: true };
 
+    const authContext: unknown = await auth.$context;
+    // SAFETY: Better Auth supplies this context to the same helper internally;
+    // its public generic is invariant in the configured auth options.
+    const decryptContext = authContext as Parameters<typeof decryptOAuthToken>[1];
     const token = account.encryptedToken
       ? await decryptOAuthToken(
           account.encryptedToken,
-          // Better Auth's exported helper loses the concrete options generic.
-          (await auth.$context) as unknown as Parameters<
-            typeof decryptOAuthToken
-          >[1],
+          decryptContext,
         )
       : undefined;
 
-    await revokeThenUnlinkGoogleAccount(token, () =>
-      auth.api.unlinkAccount({
+    await revokeThenUnlinkGoogleAccount(token, async () => {
+      await auth.api.unlinkAccount({
         headers: request.headers,
         body: { accountId: account.accountId },
-      }),
-    );
+      });
+    });
 
     return { ok: true };
   } catch {

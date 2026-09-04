@@ -45,7 +45,7 @@ export async function revokeGoogleOAuthToken(
 
 export async function revokeThenUnlinkGoogleAccount(
   token: string | undefined,
-  unlink: () => Promise<unknown>,
+  unlink: () => Promise<void>,
   revoke: RevokeToken = revokeGoogleOAuthToken,
 ) {
   if (token) await revoke(token);

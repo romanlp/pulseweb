@@ -1,56 +1,80 @@
+import { z } from "zod";
+
 const GOOGLE_HEALTH_DATA_TYPES_URL =
   "https://health.googleapis.com/v4/users/me/dataTypes";
 
-type GoogleHealthErrorResponse = {
-  error?: { message?: string };
-};
+const googleHealthErrorSchema = z.object({
+  error: z.object({ message: z.string().optional() }).optional(),
+});
 
-type ObservationInterval = {
-  startTime?: string;
-  endTime?: string;
-};
+const observationIntervalSchema = z.object({
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+});
 
-type GoogleHealthDataPoint = {
-  steps?: {
-    count?: string;
-    interval?: ObservationInterval;
-  };
-  exercise?: {
-    interval?: ObservationInterval;
-    exerciseType?: string;
-    displayName?: string;
-    activeDuration?: string;
-    metricsSummary?: {
-      caloriesKcal?: number;
-      distanceMillimeters?: number;
-      steps?: string;
-      averageHeartRateBeatsPerMinute?: string;
-      activeZoneMinutes?: string;
-      runVo2Max?: number;
-    };
-  };
-  dailyVo2Max?: {
-    date?: { year?: number; month?: number; day?: number };
-    cardioFitnessLevel?: string;
-    vo2Max?: number;
-  };
-};
+const googleHealthDataPointSchema = z.object({
+  steps: z
+    .object({
+      count: z.string().optional(),
+      interval: observationIntervalSchema.optional(),
+    })
+    .optional(),
+  exercise: z
+    .object({
+      interval: observationIntervalSchema.optional(),
+      exerciseType: z.string().optional(),
+      displayName: z.string().optional(),
+      activeDuration: z.string().optional(),
+      metricsSummary: z
+        .object({
+          caloriesKcal: z.number().optional(),
+          distanceMillimeters: z.number().optional(),
+          steps: z.string().optional(),
+          averageHeartRateBeatsPerMinute: z.string().optional(),
+          activeZoneMinutes: z.string().optional(),
+          runVo2Max: z.number().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  dailyVo2Max: z
+    .object({
+      date: z
+        .object({
+          year: z.number().optional(),
+          month: z.number().optional(),
+          day: z.number().optional(),
+        })
+        .optional(),
+      cardioFitnessLevel: z.string().optional(),
+      vo2Max: z.number().optional(),
+    })
+    .optional(),
+});
 
-type ReconciledResponse = GoogleHealthErrorResponse & {
-  dataPoints?: GoogleHealthDataPoint[];
-};
+const reconciledResponseSchema = googleHealthErrorSchema.extend({
+  dataPoints: z.array(googleHealthDataPointSchema).optional(),
+});
 
-type RollupResponse = GoogleHealthErrorResponse & {
-  rollupDataPoints?: Array<{
-    distance?: { millimetersSum?: string };
-    totalCalories?: { kcalSum?: number };
-    activeZoneMinutes?: {
-      sumInCardioHeartZone?: string;
-      sumInPeakHeartZone?: string;
-      sumInFatBurnHeartZone?: string;
-    };
-  }>;
-};
+const rollupResponseSchema = googleHealthErrorSchema.extend({
+  rollupDataPoints: z
+    .array(
+      z.object({
+        distance: z.object({ millimetersSum: z.string().optional() }).optional(),
+        totalCalories: z.object({ kcalSum: z.number().optional() }).optional(),
+        activeZoneMinutes: z
+          .object({
+            sumInCardioHeartZone: z.string().optional(),
+            sumInPeakHeartZone: z.string().optional(),
+            sumInFatBurnHeartZone: z.string().optional(),
+          })
+          .optional(),
+      }),
+    )
+    .optional(),
+});
+
+type GoogleHealthErrorResponse = z.infer<typeof googleHealthErrorSchema>;
 
 export type StepSample = {
   count: number;
@@ -74,13 +98,14 @@ export type WorkoutSummary = {
 async function googleHealthRequest<T extends GoogleHealthErrorResponse>(
   url: URL,
   accessToken: string,
+  responseSchema: z.ZodType<T>,
   init?: RequestInit,
 ) {
   const headers = new Headers(init?.headers);
   headers.set("Authorization", `Bearer ${accessToken}`);
 
   const response = await fetch(url, { ...init, headers });
-  const body = (await response.json()) as T;
+  const body = responseSchema.parse(await response.json());
 
   if (!response.ok) {
     throw new GoogleHealthError(
@@ -104,7 +129,7 @@ async function fetchReconciledDataPoints(
   url.searchParams.set("filter", filter);
   url.searchParams.set("pageSize", String(pageSize));
 
-  const body = await googleHealthRequest<ReconciledResponse>(url, accessToken);
+  const body = await googleHealthRequest(url, accessToken, reconciledResponseSchema);
   return body.dataPoints ?? [];
 }
 
@@ -117,7 +142,7 @@ async function fetchSevenDayRollup(
   const url = new URL(
     `${GOOGLE_HEALTH_DATA_TYPES_URL}/${dataType}/dataPoints:rollUp`,
   );
-  const body = await googleHealthRequest<RollupResponse>(url, accessToken, {
+  const body = await googleHealthRequest(url, accessToken, rollupResponseSchema, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

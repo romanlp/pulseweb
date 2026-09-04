@@ -34,7 +34,7 @@ export type GoogleConnectionOptions = {
 };
 
 export type GoogleOperationOptions = GoogleConnectionOptions & {
-  isUnauthorized: (error: unknown) => boolean;
+  isUnauthorized: (error: Error) => boolean;
 };
 
 export const googleConnectionErrors = {

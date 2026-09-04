@@ -34,14 +34,16 @@ describe("revokeGoogleOAuthToken", () => {
   });
 
   it("reports when Google is unavailable", async () => {
-    await assert.rejects(
-      revokeGoogleOAuthToken(
+    try {
+      await revokeGoogleOAuthToken(
         "refresh-token",
         async () => new Response(null, { status: 503 }),
-      ),
-      (error: unknown) =>
-        error instanceof GoogleOAuthRevocationError && error.status === 503,
-    );
+      );
+      assert.fail("Expected token revocation to fail.");
+    } catch (error) {
+      assert.ok(error instanceof GoogleOAuthRevocationError);
+      assert.equal(error.status, 503);
+    }
   });
 });
 
