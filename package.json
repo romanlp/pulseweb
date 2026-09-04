@@ -6,6 +6,8 @@
     "#/*": "./src/*"
   },
   "scripts": {
+    "lint": "oxlint",
+    "typecheck": "tsc --noEmit",
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
@@ -43,6 +45,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.26.0",
+    "@oxlint/plugins": "1.81.0",
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.132.0",
     "@types/node": "^22.10.2",
@@ -50,6 +53,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
     "drizzle-kit": "~0.31.10",
+    "oxlint": "1.81.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "wrangler": "^4.70.0"
