@@ -1,7 +1,8 @@
 import {betterAuth} from "better-auth";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {getDb} from "@/db/db-client.server";
-import {tanstackStartCookies} from "better-auth/tanstack-start"; // your drizzle instance
+import {tanstackStartCookies} from "better-auth/tanstack-start";
+import {bearer} from "better-auth/plugins";
 
 export const auth = betterAuth({
     database: drizzleAdapter(getDb(), {
@@ -25,5 +26,5 @@ export const auth = betterAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         }
     },
-    plugins: [tanstackStartCookies()]
+    plugins: [bearer({requireSignature: true}), tanstackStartCookies()]
 });
