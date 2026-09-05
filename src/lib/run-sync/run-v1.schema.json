@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:pulserun:run-sync:v1:run",
+  "title": "PulseRun immutable ended-run payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceRunId", "producer", "session", "workout", "locations", "heartRates", "cues", "pauses", "executions", "availability"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "sourceRunId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+    "producer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["platform", "versionName", "versionCode"],
+      "properties": {"platform": {"const": "android"}, "versionName": {"type": "string", "minLength": 1, "maxLength": 64}, "versionCode": {"type": "integer", "minimum": 1, "maximum": 2147483647}}
+    },
+    "session": {
+      "type": "object", "additionalProperties": false,
+      "required": ["startedAtEpochMillis", "endedAtEpochMillis", "status", "outcome", "failureReason"],
+      "properties": {
+        "startedAtEpochMillis": {"$ref": "#/definitions/millis"}, "endedAtEpochMillis": {"$ref": "#/definitions/millis"},
+        "status": {"enum": ["completed", "failed"]},
+        "outcome": {"enum": ["completed_as_planned", "ended_early", "failed", "unknown"]},
+        "failureReason": {"type": ["string", "null"], "maxLength": 1024}
+      }
+    },
+    "workout": {"anyOf": [{"type": "null"}, {"$ref": "#/definitions/workout"}]},
+    "locations": {"type": "array", "maxItems": 500000, "items": {"$ref": "#/definitions/location"}},
+    "heartRates": {"type": "array", "maxItems": 500000, "items": {"$ref": "#/definitions/heartRate"}},
+    "cues": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/definitions/cue"}},
+    "pauses": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/definitions/pause"}},
+    "executions": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/definitions/execution"}},
+    "availability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["workoutSnapshot", "locations", "heartRates"],
+      "properties": {
+        "workoutSnapshot": {"enum": ["present", "unavailable"]},
+        "locations": {"enum": ["present", "unavailable"]},
+        "heartRates": {"enum": ["present", "unavailable"]}
+      }
+    }
+  },
+  "definitions": {
+    "millis": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "nullableMillis": {"anyOf": [{"type": "null"}, {"$ref": "#/definitions/millis"}]},
+    "count": {"type": "integer", "minimum": 0, "maximum": 500000},
+    "id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "nullableId": {"anyOf": [{"type": "null"}, {"$ref": "#/definitions/id"}]},
+    "goal": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "durationMillis"], "properties": {"kind": {"const": "duration"}, "durationMillis": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "distanceMeters"], "properties": {"kind": {"const": "distance"}, "distanceMeters": {"type": "number", "exclusiveMinimum": 0}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind", "lowerBpm", "upperBpm"], "properties": {"kind": {"const": "heart_rate"}, "lowerBpm": {"type": "integer", "minimum": 1, "maximum": 65535}, "upperBpm": {"type": "integer", "minimum": 1, "maximum": 65535}}}
+      ]
+    },
+    "goals": {"type": "array", "maxItems": 32, "items": {"$ref": "#/definitions/goal"}},
+    "workout": {
+      "type": "object", "additionalProperties": false, "required": ["workoutId", "label", "goals", "blocks"],
+      "properties": {
+        "workoutId": {"$ref": "#/definitions/id"}, "label": {"type": ["string", "null"], "maxLength": 512},
+        "goals": {"$ref": "#/definitions/goals"},
+        "blocks": {"type": "array", "maxItems": 10000, "items": {
+          "type": "object", "additionalProperties": false, "required": ["blockId", "kind", "repeatCount", "steps"],
+          "properties": {
+            "blockId": {"$ref": "#/definitions/id"}, "kind": {"enum": ["single", "repeat"]},
+            "repeatCount": {"type": ["integer", "null"], "minimum": 1, "maximum": 10000},
+            "steps": {"type": "array", "minItems": 1, "maxItems": 10000, "items": {
+              "type": "object", "additionalProperties": false, "required": ["stepId", "label", "goals"],
+              "properties": {"stepId": {"$ref": "#/definitions/id"}, "label": {"type": "string", "maxLength": 512}, "goals": {"$ref": "#/definitions/goals"}}
+            }}
+          }
+        }}
+      }
+    },
+    "location": {
+      "type": "object", "additionalProperties": false, "required": ["sequence", "recordedAtEpochMillis", "latitude", "longitude", "accuracyMeters"],
+      "properties": {"sequence": {"$ref": "#/definitions/count"}, "recordedAtEpochMillis": {"$ref": "#/definitions/millis"}, "latitude": {"type": "number", "minimum": -90, "maximum": 90}, "longitude": {"type": "number", "minimum": -180, "maximum": 180}, "accuracyMeters": {"type": "number", "minimum": 0}}
+    },
+    "heartRate": {
+      "type": "object", "additionalProperties": false, "required": ["sequence", "receivedAtEpochMillis", "bpm"],
+      "properties": {"sequence": {"$ref": "#/definitions/count"}, "receivedAtEpochMillis": {"$ref": "#/definitions/millis"}, "bpm": {"type": "integer", "minimum": 1, "maximum": 65535}}
+    },
+    "cue": {
+      "type": "object", "additionalProperties": false, "required": ["sequence", "issuedAtEpochMillis", "kind", "text", "bpm"],
+      "properties": {"sequence": {"$ref": "#/definitions/count"}, "issuedAtEpochMillis": {"$ref": "#/definitions/millis"}, "kind": {"enum": ["heart_rate", "step_transition", "workout_completion", "sensor_status"]}, "text": {"type": "string", "maxLength": 2048}, "bpm": {"type": ["integer", "null"], "minimum": 1, "maximum": 65535}}
+    },
+    "pause": {
+      "type": "object", "additionalProperties": false, "required": ["sequence", "pausedAtEpochMillis", "resumedAtEpochMillis"],
+      "properties": {"sequence": {"$ref": "#/definitions/count"}, "pausedAtEpochMillis": {"$ref": "#/definitions/millis"}, "resumedAtEpochMillis": {"$ref": "#/definitions/nullableMillis"}}
+    },
+    "execution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["executionId", "executionIndex", "logicalStepId", "repetitionIndex", "repetitionCount", "openedAtEpochMillis", "closedAtEpochMillis", "activeElapsedMillis", "distanceMeters", "partial"],
+      "properties": {
+        "executionId": {"$ref": "#/definitions/id"}, "executionIndex": {"$ref": "#/definitions/count"}, "logicalStepId": {"$ref": "#/definitions/nullableId"},
+        "repetitionIndex": {"type": ["integer", "null"], "minimum": 1, "maximum": 10000}, "repetitionCount": {"type": ["integer", "null"], "minimum": 1, "maximum": 10000},
+        "openedAtEpochMillis": {"$ref": "#/definitions/millis"}, "closedAtEpochMillis": {"$ref": "#/definitions/nullableMillis"}, "activeElapsedMillis": {"$ref": "#/definitions/millis"}, "distanceMeters": {"type": "number", "minimum": 0}, "partial": {"type": "boolean"}
+      }
+    }
+  }
+}

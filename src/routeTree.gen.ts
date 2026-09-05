@@ -19,6 +19,8 @@ import { Route as ApiDbHealthRouteImport } from './routes/api/db/health'
 import { Route as ApiHealthConnectionRouteImport } from './routes/api/health/connection'
 import { Route as ApiHealthStepsRouteImport } from './routes/api/health/steps'
 import { Route as ApiHealthSummaryRouteImport } from './routes/api/health/summary'
+import { Route as ApiSyncV1RunsSourceRunIdRouteImport } from './routes/api/sync/v1/runs/$sourceRunId'
+import { Route as ApiSyncV1RunsSourceRunIdReceiptRouteImport } from './routes/api/sync/v1/runs/$sourceRunId/receipt'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -69,6 +71,18 @@ const ApiHealthSummaryRoute = ApiHealthSummaryRouteImport.update({
   path: '/api/health/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSyncV1RunsSourceRunIdRoute =
+  ApiSyncV1RunsSourceRunIdRouteImport.update({
+    id: '/api/sync/v1/runs/$sourceRunId',
+    path: '/api/sync/v1/runs/$sourceRunId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiSyncV1RunsSourceRunIdReceiptRoute =
+  ApiSyncV1RunsSourceRunIdReceiptRouteImport.update({
+    id: '/receipt',
+    path: '/receipt',
+    getParentRoute: () => ApiSyncV1RunsSourceRunIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -80,6 +94,8 @@ export interface FileRoutesByFullPath {
   '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
+  '/api/sync/v1/runs/$sourceRunId': typeof ApiSyncV1RunsSourceRunIdRouteWithChildren
+  '/api/sync/v1/runs/$sourceRunId/receipt': typeof ApiSyncV1RunsSourceRunIdReceiptRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -91,6 +107,8 @@ export interface FileRoutesByTo {
   '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
+  '/api/sync/v1/runs/$sourceRunId': typeof ApiSyncV1RunsSourceRunIdRouteWithChildren
+  '/api/sync/v1/runs/$sourceRunId/receipt': typeof ApiSyncV1RunsSourceRunIdReceiptRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +122,8 @@ export interface FileRoutesById {
   '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
+  '/api/sync/v1/runs/$sourceRunId': typeof ApiSyncV1RunsSourceRunIdRouteWithChildren
+  '/api/sync/v1/runs/$sourceRunId/receipt': typeof ApiSyncV1RunsSourceRunIdReceiptRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +137,8 @@ export interface FileRouteTypes {
     | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
+    | '/api/sync/v1/runs/$sourceRunId'
+    | '/api/sync/v1/runs/$sourceRunId/receipt'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -128,6 +150,8 @@ export interface FileRouteTypes {
     | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
+    | '/api/sync/v1/runs/$sourceRunId'
+    | '/api/sync/v1/runs/$sourceRunId/receipt'
   id:
     | '__root__'
     | '/_app'
@@ -140,6 +164,8 @@ export interface FileRouteTypes {
     | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
+    | '/api/sync/v1/runs/$sourceRunId'
+    | '/api/sync/v1/runs/$sourceRunId/receipt'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -151,6 +177,7 @@ export interface RootRouteChildren {
   ApiHealthConnectionRoute: typeof ApiHealthConnectionRoute
   ApiHealthStepsRoute: typeof ApiHealthStepsRoute
   ApiHealthSummaryRoute: typeof ApiHealthSummaryRoute
+  ApiSyncV1RunsSourceRunIdRoute: typeof ApiSyncV1RunsSourceRunIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -225,6 +252,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sync/v1/runs/$sourceRunId': {
+      id: '/api/sync/v1/runs/$sourceRunId'
+      path: '/api/sync/v1/runs/$sourceRunId'
+      fullPath: '/api/sync/v1/runs/$sourceRunId'
+      preLoaderRoute: typeof ApiSyncV1RunsSourceRunIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sync/v1/runs/$sourceRunId/receipt': {
+      id: '/api/sync/v1/runs/$sourceRunId/receipt'
+      path: '/receipt'
+      fullPath: '/api/sync/v1/runs/$sourceRunId/receipt'
+      preLoaderRoute: typeof ApiSyncV1RunsSourceRunIdReceiptRouteImport
+      parentRoute: typeof ApiSyncV1RunsSourceRunIdRoute
+    }
   }
 }
 
@@ -240,6 +281,20 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface ApiSyncV1RunsSourceRunIdRouteChildren {
+  ApiSyncV1RunsSourceRunIdReceiptRoute: typeof ApiSyncV1RunsSourceRunIdReceiptRoute
+}
+
+const ApiSyncV1RunsSourceRunIdRouteChildren: ApiSyncV1RunsSourceRunIdRouteChildren =
+  {
+    ApiSyncV1RunsSourceRunIdReceiptRoute: ApiSyncV1RunsSourceRunIdReceiptRoute,
+  }
+
+const ApiSyncV1RunsSourceRunIdRouteWithChildren =
+  ApiSyncV1RunsSourceRunIdRoute._addFileChildren(
+    ApiSyncV1RunsSourceRunIdRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
@@ -249,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthConnectionRoute: ApiHealthConnectionRoute,
   ApiHealthStepsRoute: ApiHealthStepsRoute,
   ApiHealthSummaryRoute: ApiHealthSummaryRoute,
+  ApiSyncV1RunsSourceRunIdRoute: ApiSyncV1RunsSourceRunIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
