@@ -4,7 +4,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getDb } from "@/db/db-client.server";
 import { runActivity } from "@/db/run-schema";
 import { auth } from "@/lib/auth";
+import { buildRunActivityProjection } from "@/lib/run-sync/run-activity-projection";
 import {
+  type RunV1,
   type RunUploadCandidate,
   validateRunV1,
 } from "@/lib/run-sync/run-v1";
@@ -97,6 +99,40 @@ function receiptResponse(
   );
 }
 
+function projectionStatement(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+  run: RunV1,
+) {
+  const projection = buildRunActivityProjection(run);
+  return db.$client
+    .prepare(
+      "INSERT OR IGNORE INTO run_activity_projection (user_id, source_run_id, started_at_epoch_millis, ended_at_epoch_millis, status, outcome, workout_label, location_count, heart_rate_count, cue_count, pause_count, execution_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(
+      userId,
+      projection.sourceRunId,
+      projection.startedAtEpochMillis,
+      projection.endedAtEpochMillis,
+      projection.status,
+      projection.outcome,
+      projection.workoutLabel,
+      projection.locationCount,
+      projection.heartRateCount,
+      projection.cueCount,
+      projection.pauseCount,
+      projection.executionCount,
+    );
+}
+
+async function ensureProjection(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+  run: RunV1,
+) {
+  await db.$client.batch([projectionStatement(db, userId, run)]);
+}
+
 async function uploadRun(request: Request, sourceRunId: string) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return errorResponse("unauthenticated", 401);
@@ -134,9 +170,11 @@ async function uploadRun(request: Request, sourceRunId: string) {
   const db = getDb();
   const existing = await findReceipt(db, session.user.id, sourceRunId);
   if (existing) {
-    return existing.contentSha256 === expectedHash
-      ? receiptResponse(existing, 200)
-      : errorResponse("payload_conflict", 409);
+    if (existing.contentSha256 !== expectedHash) {
+      return errorResponse("payload_conflict", 409);
+    }
+    await ensureProjection(db, session.user.id, validation.run);
+    return receiptResponse(existing, 200);
   }
 
   const receivedAtEpochMillis = Date.now();
@@ -167,15 +205,18 @@ async function uploadRun(request: Request, sourceRunId: string) {
         .bind(session.user.id, sourceRunId, start / chunkBytes, chunk.buffer),
     );
   }
+  statements.push(projectionStatement(db, session.user.id, validation.run));
 
   try {
     await db.$client.batch(statements);
   } catch (error) {
     const raced = await findReceipt(db, session.user.id, sourceRunId);
     if (!raced) throw error;
-    return raced.contentSha256 === expectedHash
-      ? receiptResponse(raced, 200)
-      : errorResponse("payload_conflict", 409);
+    if (raced.contentSha256 !== expectedHash) {
+      return errorResponse("payload_conflict", 409);
+    }
+    await ensureProjection(db, session.user.id, validation.run);
+    return receiptResponse(raced, 200);
   }
 
   return Response.json(

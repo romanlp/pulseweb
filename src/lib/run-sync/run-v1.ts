@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import runSchemaText from "./run-v1.schema.json?raw";
+import runContractJsonSchema from "./run-v1.schema.json" with { type: "json" };
 
 interface Sequenced {
   sequence: number;
@@ -41,6 +41,7 @@ interface WorkoutBlock {
 }
 
 interface Workout {
+  label: string | null;
   goals: Goal[];
   blocks: WorkoutBlock[];
 }
@@ -57,6 +58,8 @@ export interface RunV1 {
   schemaVersion: 1;
   sourceRunId: string;
   session: {
+    startedAtEpochMillis: number;
+    endedAtEpochMillis: number;
     status: "completed" | "failed";
     outcome: "completed_as_planned" | "ended_early" | "failed" | "unknown";
   };
@@ -75,10 +78,12 @@ export interface RunV1 {
 
 type JsonSchemaInput = Parameters<typeof z.fromJSONSchema>[0];
 
-const runContractJsonSchema: JsonSchemaInput = JSON.parse(runSchemaText);
-// SAFETY: The contract fixtures verify that successful parsing produces RunV1.
+const runContractInput: JsonSchemaInput = JSON.parse(
+  JSON.stringify(runContractJsonSchema),
+);
+// SAFETY: The contract fixture suite verifies every field represented by RunV1.
 const importedRunContract = z.fromJSONSchema(
-  runContractJsonSchema,
+  runContractInput,
 ) as z.ZodType<RunV1>;
 
 function hasContiguousOrderedSequence<T extends Sequenced>(

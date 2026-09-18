@@ -13,7 +13,9 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppActivitiesRouteImport } from './routes/_app/activities'
 import { Route as AppHealthRouteImport } from './routes/_app/health'
+import { Route as ApiRunsRouteImport } from './routes/api/runs'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiDbHealthRouteImport } from './routes/api/db/health'
 import { Route as ApiHealthConnectionRouteImport } from './routes/api/health/connection'
@@ -41,10 +43,20 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppActivitiesRoute = AppActivitiesRouteImport.update({
+  id: '/activities',
+  path: '/activities',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHealthRoute = AppHealthRouteImport.update({
   id: '/health',
   path: '/health',
   getParentRoute: () => AppRoute,
+} as any)
+const ApiRunsRoute = ApiRunsRouteImport.update({
+  id: '/api/runs',
+  path: '/api/runs',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -88,7 +100,9 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/activities': typeof AppActivitiesRoute
   '/health': typeof AppHealthRoute
+  '/api/runs': typeof ApiRunsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
   '/api/health/connection': typeof ApiHealthConnectionRoute
@@ -100,7 +114,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/activities': typeof AppActivitiesRoute
   '/health': typeof AppHealthRoute
+  '/api/runs': typeof ApiRunsRoute
   '/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
@@ -115,7 +131,9 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_app/activities': typeof AppActivitiesRoute
   '/_app/health': typeof AppHealthRoute
+  '/api/runs': typeof ApiRunsRoute
   '/_app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
@@ -131,7 +149,9 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/activities'
     | '/health'
+    | '/api/runs'
     | '/api/auth/$'
     | '/api/db/health'
     | '/api/health/connection'
@@ -143,7 +163,9 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/signup'
+    | '/activities'
     | '/health'
+    | '/api/runs'
     | '/'
     | '/api/auth/$'
     | '/api/db/health'
@@ -157,7 +179,9 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/signup'
+    | '/_app/activities'
     | '/_app/health'
+    | '/api/runs'
     | '/_app/'
     | '/api/auth/$'
     | '/api/db/health'
@@ -172,6 +196,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiRunsRoute: typeof ApiRunsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiDbHealthRoute: typeof ApiDbHealthRoute
   ApiHealthConnectionRoute: typeof ApiHealthConnectionRoute
@@ -210,12 +235,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/activities': {
+      id: '/_app/activities'
+      path: '/activities'
+      fullPath: '/activities'
+      preLoaderRoute: typeof AppActivitiesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/health': {
       id: '/_app/health'
       path: '/health'
       fullPath: '/health'
       preLoaderRoute: typeof AppHealthRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/runs': {
+      id: '/api/runs'
+      path: '/api/runs'
+      fullPath: '/api/runs'
+      preLoaderRoute: typeof ApiRunsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -270,11 +309,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppActivitiesRoute: typeof AppActivitiesRoute
   AppHealthRoute: typeof AppHealthRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppActivitiesRoute: AppActivitiesRoute,
   AppHealthRoute: AppHealthRoute,
   AppIndexRoute: AppIndexRoute,
 }
@@ -299,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiRunsRoute: ApiRunsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiDbHealthRoute: ApiDbHealthRoute,
   ApiHealthConnectionRoute: ApiHealthConnectionRoute,

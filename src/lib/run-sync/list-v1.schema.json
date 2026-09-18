@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:pulserun:run-sync:v1:list",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "nextCursor"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "$ref": "#/definitions/item" }
+    },
+    "nextCursor": { "type": ["string", "null"], "minLength": 1, "maxLength": 512 }
+  },
+  "definitions": {
+    "millis": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "count": { "type": "integer", "minimum": 0, "maximum": 500000 },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRunId", "schemaVersion", "startedAtEpochMillis", "endedAtEpochMillis", "status", "outcome", "workoutLabel", "receivedAtEpochMillis", "recordCounts"],
+      "properties": {
+        "sourceRunId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "schemaVersion": { "const": 1 },
+        "startedAtEpochMillis": { "$ref": "#/definitions/millis" },
+        "endedAtEpochMillis": { "$ref": "#/definitions/millis" },
+        "status": { "enum": ["completed", "failed"] },
+        "outcome": { "enum": ["completed_as_planned", "ended_early", "failed", "unknown"] },
+        "workoutLabel": { "type": ["string", "null"], "maxLength": 512 },
+        "receivedAtEpochMillis": { "$ref": "#/definitions/millis" },
+        "recordCounts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["locations", "heartRates", "cues", "pauses", "executions"],
+          "properties": {
+            "locations": { "$ref": "#/definitions/count" },
+            "heartRates": { "$ref": "#/definitions/count" },
+            "cues": { "$ref": "#/definitions/count" },
+            "pauses": { "$ref": "#/definitions/count" },
+            "executions": { "$ref": "#/definitions/count" }
+          }
+        }
+      }
+    }
+  }
+}

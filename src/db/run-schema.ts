@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   blob,
   foreignKey,
+  index,
   integer,
   primaryKey,
   sqliteTable,
@@ -42,5 +43,37 @@ export const runActivityPayloadChunk = sqliteTable(
       columns: [table.userId, table.sourceRunId],
       foreignColumns: [runActivity.userId, runActivity.sourceRunId],
     }).onDelete("cascade"),
+  ],
+);
+
+export const runActivityProjection = sqliteTable(
+  "run_activity_projection",
+  {
+    userId: text("user_id").notNull(),
+    sourceRunId: text("source_run_id").notNull(),
+    startedAtEpochMillis: integer("started_at_epoch_millis").notNull(),
+    endedAtEpochMillis: integer("ended_at_epoch_millis").notNull(),
+    status: text("status", { enum: ["completed", "failed"] }).notNull(),
+    outcome: text("outcome", {
+      enum: ["completed_as_planned", "ended_early", "failed", "unknown"],
+    }).notNull(),
+    workoutLabel: text("workout_label"),
+    locationCount: integer("location_count").notNull(),
+    heartRateCount: integer("heart_rate_count").notNull(),
+    cueCount: integer("cue_count").notNull(),
+    pauseCount: integer("pause_count").notNull(),
+    executionCount: integer("execution_count").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.sourceRunId] }),
+    foreignKey({
+      columns: [table.userId, table.sourceRunId],
+      foreignColumns: [runActivity.userId, runActivity.sourceRunId],
+    }).onDelete("cascade"),
+    index("run_activity_projection_owner_started_idx").on(
+      table.userId,
+      table.startedAtEpochMillis,
+      table.sourceRunId,
+    ),
   ],
 );
