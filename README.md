@@ -95,6 +95,12 @@ Do not reuse production secrets in local development or preview environments.
 Before releasing, confirm the deployed Worker has all four variables and that
 `BETTER_AUTH_URL` matches the authorized production callback's origin.
 
+### MVP-4 environments
+
+MVP-4 uses the existing local development environment and production only. Local
+development uses Wrangler's local D1 state; remote migrations, secrets, and
+deployment always target production and require explicit authorization.
+
 ### OAuth smoke test
 
 Before a release, verify:

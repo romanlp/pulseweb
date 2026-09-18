@@ -13,12 +13,16 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppActivitiesRouteImport } from './routes/_app/activities'
 import { Route as AppHealthRouteImport } from './routes/_app/health'
+import { Route as ApiRunsRouteImport } from './routes/api/runs'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiDbHealthRouteImport } from './routes/api/db/health'
 import { Route as ApiHealthConnectionRouteImport } from './routes/api/health/connection'
 import { Route as ApiHealthStepsRouteImport } from './routes/api/health/steps'
 import { Route as ApiHealthSummaryRouteImport } from './routes/api/health/summary'
+import { Route as ApiSyncV1RunsSourceRunIdRouteImport } from './routes/api/sync/v1/runs/$sourceRunId'
+import { Route as ApiSyncV1RunsSourceRunIdReceiptRouteImport } from './routes/api/sync/v1/runs/$sourceRunId/receipt'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -39,10 +43,20 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppActivitiesRoute = AppActivitiesRouteImport.update({
+  id: '/activities',
+  path: '/activities',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHealthRoute = AppHealthRouteImport.update({
   id: '/health',
   path: '/health',
   getParentRoute: () => AppRoute,
+} as any)
+const ApiRunsRoute = ApiRunsRouteImport.update({
+  id: '/api/runs',
+  path: '/api/runs',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -69,41 +83,65 @@ const ApiHealthSummaryRoute = ApiHealthSummaryRouteImport.update({
   path: '/api/health/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSyncV1RunsSourceRunIdRoute =
+  ApiSyncV1RunsSourceRunIdRouteImport.update({
+    id: '/api/sync/v1/runs/$sourceRunId',
+    path: '/api/sync/v1/runs/$sourceRunId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiSyncV1RunsSourceRunIdReceiptRoute =
+  ApiSyncV1RunsSourceRunIdReceiptRouteImport.update({
+    id: '/receipt',
+    path: '/receipt',
+    getParentRoute: () => ApiSyncV1RunsSourceRunIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/activities': typeof AppActivitiesRoute
   '/health': typeof AppHealthRoute
+  '/api/runs': typeof ApiRunsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
   '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
+  '/api/sync/v1/runs/$sourceRunId': typeof ApiSyncV1RunsSourceRunIdRouteWithChildren
+  '/api/sync/v1/runs/$sourceRunId/receipt': typeof ApiSyncV1RunsSourceRunIdReceiptRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/activities': typeof AppActivitiesRoute
   '/health': typeof AppHealthRoute
+  '/api/runs': typeof ApiRunsRoute
   '/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
   '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
+  '/api/sync/v1/runs/$sourceRunId': typeof ApiSyncV1RunsSourceRunIdRouteWithChildren
+  '/api/sync/v1/runs/$sourceRunId/receipt': typeof ApiSyncV1RunsSourceRunIdReceiptRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_app/activities': typeof AppActivitiesRoute
   '/_app/health': typeof AppHealthRoute
+  '/api/runs': typeof ApiRunsRoute
   '/_app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/db/health': typeof ApiDbHealthRoute
   '/api/health/connection': typeof ApiHealthConnectionRoute
   '/api/health/steps': typeof ApiHealthStepsRoute
   '/api/health/summary': typeof ApiHealthSummaryRoute
+  '/api/sync/v1/runs/$sourceRunId': typeof ApiSyncV1RunsSourceRunIdRouteWithChildren
+  '/api/sync/v1/runs/$sourceRunId/receipt': typeof ApiSyncV1RunsSourceRunIdReceiptRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,46 +149,60 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/activities'
     | '/health'
+    | '/api/runs'
     | '/api/auth/$'
     | '/api/db/health'
     | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
+    | '/api/sync/v1/runs/$sourceRunId'
+    | '/api/sync/v1/runs/$sourceRunId/receipt'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/signup'
+    | '/activities'
     | '/health'
+    | '/api/runs'
     | '/'
     | '/api/auth/$'
     | '/api/db/health'
     | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
+    | '/api/sync/v1/runs/$sourceRunId'
+    | '/api/sync/v1/runs/$sourceRunId/receipt'
   id:
     | '__root__'
     | '/_app'
     | '/login'
     | '/signup'
+    | '/_app/activities'
     | '/_app/health'
+    | '/api/runs'
     | '/_app/'
     | '/api/auth/$'
     | '/api/db/health'
     | '/api/health/connection'
     | '/api/health/steps'
     | '/api/health/summary'
+    | '/api/sync/v1/runs/$sourceRunId'
+    | '/api/sync/v1/runs/$sourceRunId/receipt'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiRunsRoute: typeof ApiRunsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiDbHealthRoute: typeof ApiDbHealthRoute
   ApiHealthConnectionRoute: typeof ApiHealthConnectionRoute
   ApiHealthStepsRoute: typeof ApiHealthStepsRoute
   ApiHealthSummaryRoute: typeof ApiHealthSummaryRoute
+  ApiSyncV1RunsSourceRunIdRoute: typeof ApiSyncV1RunsSourceRunIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -183,12 +235,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/activities': {
+      id: '/_app/activities'
+      path: '/activities'
+      fullPath: '/activities'
+      preLoaderRoute: typeof AppActivitiesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/health': {
       id: '/_app/health'
       path: '/health'
       fullPath: '/health'
       preLoaderRoute: typeof AppHealthRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/runs': {
+      id: '/api/runs'
+      path: '/api/runs'
+      fullPath: '/api/runs'
+      preLoaderRoute: typeof ApiRunsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -225,30 +291,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sync/v1/runs/$sourceRunId': {
+      id: '/api/sync/v1/runs/$sourceRunId'
+      path: '/api/sync/v1/runs/$sourceRunId'
+      fullPath: '/api/sync/v1/runs/$sourceRunId'
+      preLoaderRoute: typeof ApiSyncV1RunsSourceRunIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sync/v1/runs/$sourceRunId/receipt': {
+      id: '/api/sync/v1/runs/$sourceRunId/receipt'
+      path: '/receipt'
+      fullPath: '/api/sync/v1/runs/$sourceRunId/receipt'
+      preLoaderRoute: typeof ApiSyncV1RunsSourceRunIdReceiptRouteImport
+      parentRoute: typeof ApiSyncV1RunsSourceRunIdRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppActivitiesRoute: typeof AppActivitiesRoute
   AppHealthRoute: typeof AppHealthRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppActivitiesRoute: AppActivitiesRoute,
   AppHealthRoute: AppHealthRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface ApiSyncV1RunsSourceRunIdRouteChildren {
+  ApiSyncV1RunsSourceRunIdReceiptRoute: typeof ApiSyncV1RunsSourceRunIdReceiptRoute
+}
+
+const ApiSyncV1RunsSourceRunIdRouteChildren: ApiSyncV1RunsSourceRunIdRouteChildren =
+  {
+    ApiSyncV1RunsSourceRunIdReceiptRoute: ApiSyncV1RunsSourceRunIdReceiptRoute,
+  }
+
+const ApiSyncV1RunsSourceRunIdRouteWithChildren =
+  ApiSyncV1RunsSourceRunIdRoute._addFileChildren(
+    ApiSyncV1RunsSourceRunIdRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiRunsRoute: ApiRunsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiDbHealthRoute: ApiDbHealthRoute,
   ApiHealthConnectionRoute: ApiHealthConnectionRoute,
   ApiHealthStepsRoute: ApiHealthStepsRoute,
   ApiHealthSummaryRoute: ApiHealthSummaryRoute,
+  ApiSyncV1RunsSourceRunIdRoute: ApiSyncV1RunsSourceRunIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

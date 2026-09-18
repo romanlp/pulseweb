@@ -1,4 +1,4 @@
-import { Activity, Home, Link2, Settings } from "lucide-react"
+import { Activity, SportShoe, Home, Link2, Settings } from "lucide-react"
 import { createFileRoute, redirect, Outlet } from "@tanstack/react-router"
 
 import { NavigationRail } from "@/components/navigation-rail"
@@ -26,6 +26,7 @@ function AppLayout() {
             <NavigationRail
                 items={[
                     { href: "/", icon: Home, label: "Home" },
+                    { href: "/activities", icon: SportShoe, label: "Activities" },
                     { href: "/health", icon: Activity, label: "Health" },
                     { href: "/connections", icon: Link2, label: "Connections" },
                     { href: "/settings", icon: Settings, label: "Settings" },
